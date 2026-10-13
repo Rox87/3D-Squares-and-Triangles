@@ -16,6 +16,21 @@ import {
   createPointerTracker,
   calculatePulseIntensity
 } from './interaction.js';
+import {
+  THEMES,
+  getTheme,
+  getThemeList,
+  applyTheme
+} from './themes.js';
+import {
+  createEnergyBeamsMesh,
+  updateEnergyBeamsMesh
+} from './beams.js';
+import {
+  toggleSound,
+  isSoundEnabled,
+  playShockwaveSound
+} from './audio.js';
 
 function init() {
   const container = document.getElementById('canvas-container');
@@ -31,7 +46,7 @@ function init() {
     return;
   }
 
-  const { scene, camera, renderer, controls } = sceneContext;
+  const { scene, camera, renderer, controls, pointLights } = sceneContext;
 
   // 1. Instanciacao dos elementos 3D
   const cube = createCentralCube(THREE);
@@ -43,12 +58,20 @@ function init() {
   const stars = createCosmicParticleField(THREE, 1400);
   scene.add(stars.pointsMesh);
 
-  // 2. Estado de animacao e iluminacao
+  // Feixes de energia / constelacao tridimensional
+  const energyBeams = createEnergyBeamsMesh(THREE, 32);
+  scene.add(energyBeams.lineMesh);
+
+  // 2. Estado de animacao, temas e som
   let isPaused = false;
   let virtualTime = 0;
   let lightBoost = 0;
   let flashTimer = null;
   const clock = new THREE.Clock();
+
+  const themeKeys = getThemeList();
+  let currentThemeIndex = 0;
+  let currentTheme = getTheme(themeKeys[currentThemeIndex]);
 
   // Posicao padrao da camera para reset
   const defaultCamPos = new THREE.Vector3(0, 16, 36);
@@ -56,10 +79,12 @@ function init() {
 
   // 3. Disparo da Onda de Choque Gravitacional
   function triggerShockwave() {
-    // IMP-01: Não dispara nem acumula física se estiver pausado
     if (isPaused) return;
 
-    // MIN-03: Limpa timer anterior para evitar remoção prematura em cliques rápidos
+    // Efeito sonoro procedural sintetizado
+    playShockwaveSound();
+
+    // Flash sutil na interface
     if (flashEl) {
       if (flashTimer) clearTimeout(flashTimer);
       flashEl.classList.add('active');
@@ -69,7 +94,7 @@ function init() {
       }, 250);
     }
 
-    // IMP-05: Clarão suave que decai ao longo de vários frames
+    // Clarão com amortecimento suave
     lightBoost = 6.0;
 
     // Impulso físico em cada satélite
@@ -79,7 +104,7 @@ function init() {
     });
   }
 
-  // 4. Gestao robusta de eventos de ponteiro (IMP-02 e IMP-03)
+  // 4. Gestao de eventos de ponteiro
   const pointerTracker = createPointerTracker();
 
   container.addEventListener('pointerdown', (e) => {
@@ -97,10 +122,48 @@ function init() {
     pointerTracker.onPointerCancel();
   });
 
-  // 5. Controles do HUD (com stopPropagation para nao afetar o canvas)
+  // 5. Controles do HUD
+  const btnTheme = document.getElementById('btn-theme');
+  const themeLabel = document.getElementById('theme-label');
+  const btnAudio = document.getElementById('btn-audio');
+  const audioIconOff = document.getElementById('audio-icon-off');
+  const audioIconOn = document.getElementById('audio-icon-on');
+  const audioLabel = document.getElementById('audio-label');
   const btnPause = document.getElementById('btn-pause');
   const btnReset = document.getElementById('btn-reset');
   const btnFullscreen = document.getElementById('btn-fullscreen');
+
+  // Alternador de Temas Estéticos
+  if (btnTheme) {
+    btnTheme.addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentThemeIndex = (currentThemeIndex + 1) % themeKeys.length;
+      const key = themeKeys[currentThemeIndex];
+      currentTheme = getTheme(key);
+
+      applyTheme(key, { cube, satellites, pointLights, scene }, THREE);
+
+      if (themeLabel) themeLabel.textContent = currentTheme.name;
+    });
+  }
+
+  // Alternador de Áudio Procedural
+  if (btnAudio) {
+    btnAudio.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const newState = !isSoundEnabled();
+      toggleSound(newState);
+
+      if (audioIconOff && audioIconOn) {
+        audioIconOff.style.display = newState ? 'none' : 'block';
+        audioIconOn.style.display = newState ? 'block' : 'none';
+      }
+      if (audioLabel) {
+        audioLabel.textContent = newState ? 'Som: Ativo' : 'Som: Mudo';
+      }
+      btnAudio.classList.toggle('active', newState);
+    });
+  }
 
   if (btnPause) {
     btnPause.addEventListener('click', (e) => {
@@ -117,7 +180,6 @@ function init() {
       e.stopPropagation();
       camera.position.copy(defaultCamPos);
       controls.target.copy(defaultTarget);
-      // MIN-04: Usa controls.reset() se disponivel
       if (typeof controls.reset === 'function') {
         controls.reset();
       } else {
@@ -160,7 +222,7 @@ function init() {
       cube.group.rotation.y += delta * 0.45;
       cube.group.rotation.z += delta * 0.15;
 
-      // IMP-05: Clarão com amortecimento suave
+      // Clarão com amortecimento suave
       lightBoost *= 0.92;
       if (cube.internalLight) {
         cube.internalLight.intensity = calculatePulseIntensity(lightBoost, virtualTime);
@@ -176,9 +238,18 @@ function init() {
         sat.group.rotation.y += delta * sat.spinSpeed * sat.spinAxis.y;
         sat.group.rotation.z += delta * sat.spinSpeed * sat.spinAxis.z;
 
-        // Amortecimento continuo de choque em direcao a orbita base
+        // Amortecimento continuo de choque
         decayShockwaveOffset(sat.satelliteState, 0.95);
       });
+
+      // Atualizacao dos feixes de conexao de energia dinamicos
+      updateEnergyBeamsMesh(
+        energyBeams,
+        cube.group.position,
+        satellites,
+        currentTheme.beamColor,
+        14
+      );
 
       // Rotacao sutil do campo de estrelas
       stars.pointsMesh.rotation.y += delta * 0.02;
