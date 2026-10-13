@@ -11,6 +11,11 @@ import {
   applyShockwaveImpulse,
   decayShockwaveOffset
 } from './physics.js';
+import {
+  shouldTriggerShockwave,
+  createPointerTracker,
+  calculatePulseIntensity
+} from './interaction.js';
 
 function init() {
   const container = document.getElementById('canvas-container');
@@ -38,9 +43,11 @@ function init() {
   const stars = createCosmicParticleField(THREE, 1400);
   scene.add(stars.pointsMesh);
 
-  // 2. Estado de animacao
+  // 2. Estado de animacao e iluminacao
   let isPaused = false;
   let virtualTime = 0;
+  let lightBoost = 0;
+  let flashTimer = null;
   const clock = new THREE.Clock();
 
   // Posicao padrao da camera para reset
@@ -49,44 +56,45 @@ function init() {
 
   // 3. Disparo da Onda de Choque Gravitacional
   function triggerShockwave() {
-    // Flash sutil na interface
+    // IMP-01: Não dispara nem acumula física se estiver pausado
+    if (isPaused) return;
+
+    // MIN-03: Limpa timer anterior para evitar remoção prematura em cliques rápidos
     if (flashEl) {
+      if (flashTimer) clearTimeout(flashTimer);
       flashEl.classList.add('active');
-      setTimeout(() => flashEl.classList.remove('active'), 250);
+      flashTimer = setTimeout(() => {
+        flashEl.classList.remove('active');
+        flashTimer = null;
+      }, 250);
     }
 
-    // Aumento temporario na luz central
-    if (cube.internalLight) {
-      cube.internalLight.intensity = 8.5;
-    }
+    // IMP-05: Clarão suave que decai ao longo de vários frames
+    lightBoost = 6.0;
 
-    // Impulso em cada satelite com variacao organica
+    // Impulso físico em cada satélite
     satellites.forEach((sat, idx) => {
       const impulse = 9.0 + (idx % 4) * 2.5 + Math.random() * 3.0;
       applyShockwaveImpulse(sat.satelliteState, impulse);
     });
   }
 
-  // 4. Distincao entre clique e arrasto no Canvas
-  let pointerStart = { x: 0, y: 0, time: 0 };
+  // 4. Gestao robusta de eventos de ponteiro (IMP-02 e IMP-03)
+  const pointerTracker = createPointerTracker();
 
   container.addEventListener('pointerdown', (e) => {
-    pointerStart = {
-      x: e.clientX,
-      y: e.clientY,
-      time: performance.now()
-    };
+    pointerTracker.onPointerDown(e);
   });
 
   container.addEventListener('pointerup', (e) => {
-    const dx = Math.abs(e.clientX - pointerStart.x);
-    const dy = Math.abs(e.clientY - pointerStart.y);
-    const dt = performance.now() - pointerStart.time;
-
-    // Se o ponteiro moveu menos de 6 pixels e durou menos de 350ms, trata como clique/toque
-    if (dx < 6 && dy < 6 && dt < 350) {
+    const result = pointerTracker.onPointerUp(e);
+    if (result && shouldTriggerShockwave(result, { isPaused })) {
       triggerShockwave();
     }
+  });
+
+  container.addEventListener('pointercancel', () => {
+    pointerTracker.onPointerCancel();
   });
 
   // 5. Controles do HUD (com stopPropagation para nao afetar o canvas)
@@ -109,7 +117,12 @@ function init() {
       e.stopPropagation();
       camera.position.copy(defaultCamPos);
       controls.target.copy(defaultTarget);
-      controls.update();
+      // MIN-04: Usa controls.reset() se disponivel
+      if (typeof controls.reset === 'function') {
+        controls.reset();
+      } else {
+        controls.update();
+      }
     });
   }
 
@@ -147,9 +160,10 @@ function init() {
       cube.group.rotation.y += delta * 0.45;
       cube.group.rotation.z += delta * 0.15;
 
-      // Pulsacao continua da luz do nucleo
+      // IMP-05: Clarão com amortecimento suave
+      lightBoost *= 0.92;
       if (cube.internalLight) {
-        cube.internalLight.intensity = 2.8 + Math.sin(virtualTime * 3.5) * 0.8;
+        cube.internalLight.intensity = calculatePulseIntensity(lightBoost, virtualTime);
       }
 
       // Atualizacao e translacao orbital dos 24 satelites

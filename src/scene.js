@@ -60,6 +60,26 @@ export function setupScene(container, THREE, OrbitControls) {
     container.appendChild(renderer.domElement);
   }
 
+  // Tratamento de perda e restauracao de contexto WebGL (IMP-04)
+  if (renderer.domElement && typeof renderer.domElement.addEventListener === 'function') {
+    renderer.domElement.addEventListener('webglcontextlost', (event) => {
+      event.preventDefault();
+      const fallbackEl = document.getElementById('webgl-fallback');
+      if (fallbackEl) {
+        const h3 = fallbackEl.querySelector('h3');
+        const p = fallbackEl.querySelector('p');
+        if (h3) h3.textContent = 'Contexto WebGL Interrompido';
+        if (p) p.textContent = 'A conexão com a GPU foi temporariamente perdida. Recarregue a página se a imagem não retornar.';
+        fallbackEl.style.display = 'block';
+      }
+    }, false);
+
+    renderer.domElement.addEventListener('webglcontextrestored', () => {
+      const fallbackEl = document.getElementById('webgl-fallback');
+      if (fallbackEl) fallbackEl.style.display = 'none';
+    }, false);
+  }
+
   // 5. Controles de camera orbitais com amortecimento
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -85,10 +105,15 @@ export function setupScene(container, THREE, OrbitControls) {
  */
 export function handleResize(sceneContext, width, height) {
   if (!sceneContext || !sceneContext.camera || !sceneContext.renderer) return;
+  if (width <= 0 || height <= 0) return;
 
   sceneContext.camera.aspect = width / height;
   if (typeof sceneContext.camera.updateProjectionMatrix === 'function') {
     sceneContext.camera.updateProjectionMatrix();
+  }
+  if (typeof sceneContext.renderer.setPixelRatio === 'function') {
+    const pixelRatio = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1;
+    sceneContext.renderer.setPixelRatio(pixelRatio);
   }
   if (typeof sceneContext.renderer.setSize === 'function') {
     sceneContext.renderer.setSize(width, height);
