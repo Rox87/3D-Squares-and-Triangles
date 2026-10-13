@@ -1,8 +1,8 @@
 {
-  "name": "arte-3d-prisma-cosmico",
+  "name": "3d-squares-and-triangles",
   "version": "1.0.0",
   "type": "module",
-  "description": "Arte 3D generativa e interativa desenvolvida com Three.js",
+  "description": "3D Squares and Triangles - Arte 3D generativa e interativa desenvolvida com Three.js",
   "scripts": {
     "test": "node --test tests/*.test.js",
     "start": "node serve.js"
