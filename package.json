@@ -1,0 +1,9 @@
+{
+  "name": "arte-3d-prisma-cosmico",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Arte 3D generativa e interativa desenvolvida com Three.js",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}
