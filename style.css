@@ -1,0 +1,226 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #03030c;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #e2e8f0;
+}
+
+#canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  touch-action: none;
+  cursor: grab;
+}
+
+#canvas-container:active {
+  cursor: grabbing;
+}
+
+/* Header Minimalista Glassmorphism */
+.ui-header {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.5rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1.2rem;
+  background: rgba(8, 12, 28, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  border-radius: 9999px;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.15);
+  pointer-events: auto;
+}
+
+.ui-logo-glow {
+  width: 10px;
+  height: 10px;
+  background: #00f0ff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff;
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+.ui-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+.ui-subtitle {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 400;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  padding-left: 0.75rem;
+}
+
+/* Painel de Controles HUD */
+.ui-hud {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.5rem;
+  z-index: 10;
+  display: flex;
+  gap: 0.6rem;
+  pointer-events: auto;
+}
+
+.hud-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.95rem;
+  background: rgba(8, 12, 28, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.hud-btn:hover {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: rgba(0, 240, 255, 0.6);
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.hud-btn:active {
+  transform: translateY(0);
+}
+
+.hud-btn.active {
+  background: rgba(255, 0, 128, 0.2);
+  border-color: rgba(255, 0, 128, 0.8);
+  color: #ff007f;
+  box-shadow: 0 0 15px rgba(255, 0, 128, 0.4);
+}
+
+/* Barra de Instruções no Rodapé */
+.ui-footer {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1.4rem;
+  background: rgba(8, 12, 28, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.ui-footer span {
+  color: #00f0ff;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+}
+
+/* Indicador de Onda de Choque */
+.shockwave-flash {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(0, 240, 255, 0.25) 0%, rgba(255, 0, 128, 0.15) 45%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease-out;
+  z-index: 5;
+}
+
+.shockwave-flash.active {
+  opacity: 1;
+  transition: opacity 0.05s ease-in;
+}
+
+/* Fallback WebGL */
+#webgl-fallback {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 2rem;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid #ef4444;
+  border-radius: 12px;
+  color: #f87171;
+  text-align: center;
+  max-width: 420px;
+  z-index: 100;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+    box-shadow: 0 0 15px #00f0ff, 0 0 25px #00f0ff;
+  }
+}
+
+@media (max-width: 640px) {
+  .ui-header {
+    top: 0.75rem;
+    left: 0.75rem;
+    padding: 0.45rem 0.85rem;
+  }
+  .ui-subtitle {
+    display: none;
+  }
+  .ui-hud {
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+  .hud-btn span {
+    display: none;
+  }
+  .ui-footer {
+    bottom: 0.75rem;
+    font-size: 0.7rem;
+    padding: 0.45rem 0.9rem;
+    max-width: 90vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

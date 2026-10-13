@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Prisma Cósmico - Arte 3D Interativa</title>
+  <link rel="stylesheet" href="style.css">
+  
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three.module.js",
+      "three/addons/controls/OrbitControls.js": "./vendor/OrbitControls.js"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- Flash visual de onda de choque -->
+  <div id="shockwave-flash" class="shockwave-flash"></div>
+
+  <!-- Header Superior -->
+  <header class="ui-header">
+    <div class="ui-logo-glow"></div>
+    <div class="ui-title">Prisma Cósmico</div>
+    <div class="ui-subtitle">1 Cubo Central & 24 Satélites Triangulares</div>
+  </header>
+
+  <!-- Controles HUD -->
+  <nav class="ui-hud">
+    <button id="btn-pause" class="hud-btn" aria-label="Pausar ou retomar rotacao">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+      </svg>
+      <span>Pausar</span>
+    </button>
+    <button id="btn-reset" class="hud-btn" aria-label="Resetar visualizacao da camera">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+      </svg>
+      <span>Resetar</span>
+    </button>
+    <button id="btn-fullscreen" class="hud-btn" aria-label="Alternar tela cheia">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+      </svg>
+      <span>Tela Cheia</span>
+    </button>
+  </nav>
+
+  <!-- Container principal do Canvas Three.js -->
+  <div id="canvas-container"></div>
+
+  <!-- Instrucoes de Interacao no Rodape -->
+  <footer class="ui-footer">
+    <span>✦</span> Arraste com o mouse para orbitar em 360° &bull; Clique para disparar pulso gravitacional <span>✦</span>
+  </footer>
+
+  <!-- Mensagem de Fallback caso WebGL nao seja suportado -->
+  <div id="webgl-fallback">
+    <h3>WebGL Não Disponível</h3>
+    <p>Seu navegador ou dispositivo parece não suportar aceleração WebGL para renderizar a cena 3D.</p>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
